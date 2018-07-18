@@ -141,3 +141,60 @@ def mean_rgb (cell):
 
 	return results
 
+def ascending_left (cell):
+	total = 0
+	pixels = cell.image.getdata()
+	num_pixels = len(pixels)
+
+	for n in xrange(0, len(pixels)):
+		lum_actual = (max(*pixels[n]) -  min(*pixels[n]))/2
+		lum_prev = (max(*pixels[n-1]) - min(*pixels[n-1]))/2
+		if ((n % cell.w) != 0) and (lum_prev > lum_actual):
+			total += (lum_prev - lum_actual)
+
+	return total / num_pixels
+
+def ascending_right (cell):
+	total = 0
+	pixels = cell.image.getdata()
+	num_pixels = len(pixels)
+
+	for n in xrange(0, len(pixels)):
+		lum_actual = (max(*pixels[n]) -  min(*pixels[n]))/2
+		lum_prev = (max(*pixels[n-1]) - min(*pixels[n-1]))/2
+		if ((n % cell.w) != 0) and (lum_actual > lum_prev):
+			total += (lum_actual - lum_prev)
+
+	return total / num_pixels
+
+def ascending_down (cell):
+	total = 0
+	pixels = cell.image.getdata()
+	num_pixels = len(pixels)
+
+	for n in xrange(cell.w, len(pixels)):
+		lum_actual = (max(*pixels[n]) -  min(*pixels[n]))/2
+		lum_prev = (max(*pixels[n-cell.w]) - min(*pixels[n-cell.w]))/2
+		if (lum_actual > lum_prev):
+			total += (lum_actual - lum_prev)
+
+	return total / num_pixels
+
+def ascending_up (cell):
+	total = 0
+	pixels = cell.image.getdata()
+	num_pixels = len(pixels)
+
+	for n in xrange(cell.w, len(pixels)):
+		lum_actual = (max(*pixels[n]) -  min(*pixels[n]))/2
+		lum_prev = (max(*pixels[n-cell.w]) - min(*pixels[n-cell.w]))/2
+		if (lum_prev > lum_actual):
+			total += (lum_prev - lum_actual)
+
+	return total / num_pixels
+
+
+
+
+
+

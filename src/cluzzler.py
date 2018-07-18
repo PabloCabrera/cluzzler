@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+
+
 from Cell import Cell
 from TestAnalyzer import TestAnalyzer
 from CellDescriptor import CellDescriptor
@@ -7,27 +11,33 @@ from os.path import isfile, join, basename
 from math import sqrt, ceil
 
 from PIL import Image
+from sklearn.cluster import DBSCAN
 from scipy.cluster.hierarchy import fclusterdata
 from scipy.cluster.vq import kmeans2
 from numpy import array, zeros, empty
 from matplotlib import pyplot
+import json
 
-INPUT_DIR = "input"
+INPUT_DIR = "input/animales"
 OUTPUT_DIR = "output"
-CELL_SIZE = 40
+CELL_SIZE = 32
 METRICS_CLUSTER = [
-	#"mean_r", "mean_g", "mean_b",
+	"mean_r", "mean_g", "mean_b",
 	#"min_r", "min_g", "min_b",
-	#"med_r", "med_g", "med_b",
 	#"max_r", "max_g", "max_b",
 	"min_hue", "max_hue",
-	"pos_x", "pos_y",
-	"seq_diff"]
+	# "pos_x", "pos_y",
+	#"seq_diff"
+	"ascending_right", "ascending_left",
+	"ascending_down", "ascending_up"
+	]
+
 def main ():
 	analyzer = TestAnalyzer ()
 	cells_by_file = {}
 	for filename in get_input_files (INPUT_DIR):
 		image = load_image (filename)
+		CELL_SIZE = max(*image.size) / 16
 		cells = get_cells (image, CELL_SIZE)
 		cells_by_file[filename] = cells
 		cluster_data = empty (shape=(len(cells), len(METRICS_CLUSTER)))
@@ -41,10 +51,36 @@ def main ():
 			cell_row += 1
 
 		print ("Clustering %i cells  (%s)" % (len (cells), filename))
-		centroids, groups = kmeans2 (cluster_data, 15)
+		#centroids, groups = kmeans2 (cluster_data, 8)
+		db = DBSCAN(eps=0.1, min_samples=3).fit(cluster_data)
+		groups = []
+		for label in db.labels_:
+			groups.append (label+1)
 		num_clusters = max (groups)
 		print ("Found %i clusters" % num_clusters)
-		generate_cluster_images(groups, cells, filename)
+		generate_json (groups, cells, filename, image)
+		generate_cluster_images (groups, cells, filename)
+
+
+def generate_json (groups, cells, input_filename, image):
+	gen = {}
+	num_clusters = max (groups)
+	cell_width = cells[0].w
+	cell_height = cells[0].h
+	image_width = image.size[0]
+	image_height = image.size[1]
+
+	gen["num_clusters"] = num_clusters;
+	gen["cell_width"] = cell_width;
+	gen["cell_height"] = cell_height;
+	gen["image_width"] = image_width;
+	gen["image_height"] = image_height;
+	gen["groups"] = groups
+
+	output = open ("%s/groups_%s.json" % (OUTPUT_DIR, basename (input_filename)), "w")
+	output.write (json.dumps (gen));
+	output.close ()
+
 
 def generate_cluster_images (clusters, cells, filename_prefix):
 	print "clusters: %i elementos" % len (clusters)
@@ -81,6 +117,7 @@ def generate_cluster_images (clusters, cells, filename_prefix):
 				image.paste (cell.image, (x, y))
 			image.save (join (OUTPUT_DIR, basename ("%s.%i.jpg"% (filename_prefix, n_cluster))))
 
+
 def get_input_files (dirname):
 	all_files = listdir (dirname)
 	valid_files = []
@@ -95,6 +132,7 @@ def load_image (filename):
 	image = Image.open (filename)
 	print ("%s [%i x %i]" % (filename, image.size[0], image.size[1]))
 	return image
+
 
 def get_cells (image, cell_size):
 	cells = []
