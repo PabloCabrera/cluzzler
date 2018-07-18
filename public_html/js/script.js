@@ -1,0 +1,129 @@
+function init () {
+	M.AutoInit();
+	load_select_image ();
+	adjust_canvas_size ();
+	//window.addEventListener ("resize", redraw_canvas);
+}
+
+function load_select_image () {
+	var xhr = new XMLHttpRequest();
+	xhr.open ("GET", "cluzzimages");
+	xhr.onload = on_load_images_success;
+	xhr.send();
+}
+
+function on_load_images_success (evt) {
+	var groups = JSON.parse (evt.target.responseText);
+	var group_names = Object.keys (groups)
+	var select = document.querySelector ("select[name=imagefile]");
+	select.textContent = ""
+	group_names.forEach (function (name) {
+		var optgroup = document.createElement ("OPTGROUP");
+		select.appendChild (optgroup);
+		optgroup.label =  name.charAt(0).toUpperCase() + name.slice(1);
+		for (var i = 0; i < groups[name].length; i++) {
+			var elem = groups[name][i];
+			var option = document.createElement ("OPTION");
+			var display_name = elem.replace(/.*\//, "").replace(/\.(jpe?g|png|gif)$/i, "").replace ("_", " ")
+			optgroup.appendChild (option);
+			option.value = elem;
+			option.textContent = display_name;
+		}
+	});
+	M.FormSelect.init(select)
+	update_image ()
+}
+
+function adjust_canvas_size () {
+	var canvas = document.querySelector ("canvas.demo_canvas");
+	canvas.width = canvas.parentNode.clientWidth;
+	canvas.height = canvas.parentNode.clientHeight;
+}
+
+function update_image () {
+	clear_image_events ()
+	var url = document.querySelector ("select[name=imagefile]").value;
+	var img = document.createElement ("IMG");
+	img.addEventListener ("load", draw_image_to_canvas);
+	img.src = url;
+	CURRENT_IMG = img;
+}
+
+function clear_image_events () {
+	if (typeof (CURRENT_IMG) == "object") {
+		CURRENT_IMG.removeEventListener ("load", draw_image_to_canvas);
+		CURRENT_IMG = null;
+	}
+}
+
+function draw_image_to_canvas (evt) {
+	var img = evt.target;
+	var canvas = document.querySelector ("canvas.demo_canvas");
+	var context = canvas.getContext("2d");
+	var grid_size = document.querySelector("input#cell_size").value;
+	
+	adjust_canvas_size ();
+	scale_canvas_to_fit_image (canvas, img);
+	context.drawImage (img, 0, 0);
+	draw_grid (context, img, grid_size)
+}
+
+function scale_canvas_to_fit_image (canvas, img) {
+	var context = canvas.getContext ("2d");
+	context.setTransform (1, 0, 0, 1, 0, 0); // Reset transformations
+	var ratio_x = canvas.width / img.width;
+	var ratio_y = canvas.height / img.height;
+	var ratio = Math.min (ratio_x, ratio_y);
+	context.scale (ratio, ratio);
+
+	var translate_x = (-img.width + (canvas.width /ratio)) /2;
+	var translate_y = (-img.height + (canvas.height /ratio)) /2;
+	context.translate (translate_x, translate_y);
+}
+
+function draw_grid (context, img, grid_size) {
+	context.setLineDash ([4, 4]);
+	var y = 0;
+	while (y <= img.height) {
+		context.beginPath();
+		context.moveTo(0, y);
+		context.lineTo(img.width, y);
+		context.lineWidth = 3 
+		context.strokeStyle = "rgb(0,0,0,0.5)"
+		context.stroke()
+		context.lineWidth = 1
+		context.strokeStyle = "rgb(255,255,255)"
+		context.stroke()
+		y += Number (grid_size);
+	}
+	var x = 0;
+	while (x <= img.width) {
+		context.beginPath();
+		context.moveTo(x, 0);
+		context.lineTo(x, img.height);
+		context.lineWidth = 3
+		context.strokeStyle = "rgba(0,0,0,0.5)"
+		context.stroke()
+		context.lineWidth = 1
+		context.strokeStyle = "rgb(255,255,255)"
+		context.stroke()
+		x += Number (grid_size);
+	}
+}
+
+function redraw_image () {
+	if (typeof (CURRENT_IMG) == "object") {
+		var img = CURRENT_IMG
+		var canvas = document.querySelector ("canvas.demo_canvas");
+		var context = canvas.getContext("2d");
+		var grid_size = document.querySelector("input#cell_size").value;
+	
+		adjust_canvas_size ();
+		scale_canvas_to_fit_image (canvas, img);
+		context.drawImage (img, 0, 0);
+		draw_grid (context, img, grid_size)
+	}
+}
+
+window.onload = init;
+

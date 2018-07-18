@@ -1,0 +1,16 @@
+.main_frame {
+	height: calc(100vh - 24px);;
+	display: flex;
+	flex-direction: column;
+}
+
+.main_frame select {
+	flex-grow: 0;
+}
+
+.main_frame .canvas_container {
+	flex-grow: 1;
+}
+
+.canvas_container canvas {
+}

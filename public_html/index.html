@@ -4,33 +4,24 @@
 	<title>Cluzzler</title>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
 	<link rel="stylesheet" type="text/css" href="css/materialize.min.css">
 	<link rel="stylesheet" type="text/css" href="css/material-icons.css">
+	<script type="application/javascript" src="js/materialize.min.js"></script>
+	<script type="application/javascript" src="js/script.js"></script>
 </head>
 
 <body>
 
-<nav class="green" role="navigation">
-	<div class="nav-wrapper container">
-		<a id="logo-container" href="#" class="brand-logo">Cluzzler</a>
-	</div>
-</nav>
-
-<br>
-
 <div class="row">
 
 	<div class="col s12 m8"> <!-- image frame -->
-		<div class="card-panel grey lighten-4 center">
-			<i class="large material-icons grey-text">cloud_upload</i>
-			<div class="file-field input-field">
-	  			<div class="btn green">
-					<span>Cargar imagen</span>
-					<input type="file">
-	  			</div>
-	  			<div class="file-path-wrapper">
-					<input class="file-path validate" type="text">
-	  			</div>
+		<div class="main_frame card-panel grey lighten-4 center">
+			<select name="imagefile" onchange="update_image()">
+				<option>Cargando imagenes...</option>
+			</select>
+			<div class="canvas_container">
+				<canvas class="demo_canvas">
 			</div>
 		</div>
 	</div> <!-- image frame -->
@@ -40,24 +31,25 @@
 			<header>Controles</header>
 
 			<div class="input-field">
-				<label>Nombre de archivo</label>
-				<input type="text" name="filename">
-			</div>
-
-			<div class="input-field">
 				<select name="algorithm">
-					<option value="kmeans">K-Means</option>
-					<option value="hierarchical">Jerárquico</option>
 					<option value="dbscan">DBScan</option>
-					<option value="knn">KNN</option>
 				</select>
 				<label>Algoritmo de clustering:</label>
 			</div>
 
+			<div class="row">
+				<div class="input-field col s12">
+					<input id="cell_size" value="32" type="number" min="1" max="256" onchange="redraw_image()">
+					<label for="cell_size">Tamaño de la celda</label>
+				</div>
+			</div>
+
+			<!--
 			<div class="range-field">
 				<label>Cantidad de Clusters esperados</label>
 				<input type="range" min="0" max="100" />
 			</div>
+			-->
 
 			<div class="switch">
 				<label>Mostrar estadísticas</label><br>
@@ -81,14 +73,6 @@
 
 </div> <!-- .row -->
 
-<script type="application/javascript" src="/js/jquery-3.2.1.min.js"></script>
-<script type="application/javascript" src="/js/materialize.min.js"></script>
-<script>
- 	$(document).ready(function() {
-		$('select').material_select();
-		$(".button-collapse").sideNav();
-	})
-</script>
 </body>
 </html>
 
