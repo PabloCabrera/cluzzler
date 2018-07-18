@@ -10,8 +10,6 @@ from WebRedirector import WebRedirector
 
 def example_controller (environ, start_response):
 	output = "<h1>Hola mundo redirector</h1><p>Desde Python</p>"
-	if (environ["REQUEST_URI"].startswith("/agua")):
-		output += "<div style='width: 48px; height:48px; background:blue'></div>"
 	for variable in environ:
 		output += "<dl><dt>%s</dt><dd>%s</dd></dl>" % (variable, environ[variable])
 	output += "<h3>sys.path</h3><ul>"
