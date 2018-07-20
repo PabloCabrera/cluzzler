@@ -1,4 +1,5 @@
 {
 	"info": "infocontroller.info",
-	"cluzzimages": "images.list"
+	"cluzzimages": "images.list",
+	"process": "cluzzler.process"
 }

@@ -2,7 +2,7 @@ function init () {
 	M.AutoInit();
 	load_select_image ();
 	adjust_canvas_size ();
-	//window.addEventListener ("resize", redraw_canvas);
+	window.addEventListener ("resize", redraw_image);
 }
 
 function load_select_image () {
@@ -45,7 +45,7 @@ function update_image () {
 	var url = document.querySelector ("select[name=imagefile]").value;
 	var img = document.createElement ("IMG");
 	img.addEventListener ("load", draw_image_to_canvas);
-	img.src = url;
+	img.src = "images/" + url;
 	CURRENT_IMG = img;
 }
 
@@ -122,6 +122,47 @@ function redraw_image () {
 		scale_canvas_to_fit_image (canvas, img);
 		context.drawImage (img, 0, 0);
 		draw_grid (context, img, grid_size)
+	}
+}
+
+function process () {
+	var button = document.querySelector(".btn_process");
+	button.disabled = true;
+
+	var cell_size = document.querySelector ("input#cell_size").value;
+	var filename = document.querySelector ("select[name=imagefile]").value;
+	var xhr = new XMLHttpRequest ();
+	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename));
+	xhr.onload = on_process_success;
+	xhr.send ();
+}
+
+function on_process_success (evt) {
+	var button = document.querySelector(".btn_process");
+	button.disabled = false;
+	var response = JSON.parse (evt.target.responseText);
+	var context = document.querySelector ("canvas.demo_canvas").getContext("2d");
+	draw_clusters (response, context);
+}
+
+function draw_clusters (data, context) {
+	DEBUG_DATA = data;
+	var container = document.querySelector (".img_container");
+	var columns = Math.ceil (data.image_width / data.cell_width);
+	var dot_colors = [];
+	for (var i = 0; i< data.groups.length; i++) {
+		var dot = document.createElement ("DIV");
+		if (typeof (dot_colors[data.groups[i]]) == "undefined") {
+			dot_colors[data.groups[i]] = "rgba("+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+", 0.6)";
+		}
+		var center_x = data.cell_width * ((i % columns) + 0.5);
+		var center_y = Math.ceil (data.cell_height * Math.floor (i/columns)) + data.cell_height/2
+		var radius = (Math.min (data.cell_width, data.cell_height)/2)-2;
+
+		context.beginPath ();
+		context.fillStyle = dot_colors[data.groups[i]];
+		context.arc (center_x, center_y, radius, 0, 2*Math.PI);
+		context.fill ();
 	}
 }
 

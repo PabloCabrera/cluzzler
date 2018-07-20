@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-
-
 from Cell import Cell
 from TestAnalyzer import TestAnalyzer
 from CellDescriptor import CellDescriptor

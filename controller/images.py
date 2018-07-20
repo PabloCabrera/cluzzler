@@ -11,7 +11,7 @@ def list (env, start_request):
 		group = []
 		images[dir] = group
 		for file in files:
-			group.append ("%s/%s/%s" % ("images", dir, file))
+			group.append ("%s/%s" % (dir, file))
 	
 	start_request ("200 OK", [("Content-Type", "application/json")])
 	return json.dumps (images)

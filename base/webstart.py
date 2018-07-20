@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys, os, json
 _wsgi_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-for subdir in ["base", "controller"]:
+for subdir in ["base", "controller", "src"]:
 	_include_path = os.path.join (_wsgi_path, subdir)
 	if _include_path not in sys.path:
 		sys.path.append (_include_path)
