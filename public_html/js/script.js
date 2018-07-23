@@ -3,6 +3,7 @@ function init () {
 	load_metric_list ();
 	load_select_image ();
 	adjust_canvas_size ();
+	set_canvas_mouse_listener ();
 	window.addEventListener ("resize", redraw_image);
 }
 
@@ -74,8 +75,36 @@ function append_control_to_ui (control) {
 function adjust_canvas_size () {
 	var canvas = document.querySelector ("canvas.demo_canvas");
 	canvas.width = canvas.parentNode.clientWidth;
-	canvas.height = canvas.parentNode.clientHeight;
+	canvas.height = canvas.parentNode.clientHeight - 10;
 }
+
+function set_canvas_mouse_listener () {
+	var canvas = document.querySelector ("canvas.demo_canvas");
+	var context = canvas.getContext ("2d");
+	canvas.addEventListener ("mousemove", function (evt) {
+		var rect = canvas.getBoundingClientRect ();
+		var x = (evt.clientX - rect.left) / canvas.dataset.scaled_x - canvas.dataset.translated_x;
+		var y = (evt.clientY - rect.top) / canvas.dataset.scaled_y - canvas.dataset.translated_y;
+		canvas_mouse (x, y);
+	});
+}
+
+function canvas_mouse (x, y) {
+	if (
+		(typeof (CLUSTER_DATA) == "object")
+		&& (x >= 0) && (x <= CLUSTER_DATA.image_width)
+		&& (y >= 0) && (y <= CLUSTER_DATA.image_height)
+	) {
+		var row = Math.floor (y / CLUSTER_DATA.cell_height);
+		var col = Math.floor (x / CLUSTER_DATA.cell_width);
+		var cols_per_row = Math.ceil (CLUSTER_DATA.image_width / CLUSTER_DATA.cell_width);
+		var cell_pos = row * cols_per_row + col;
+		var cluster_number = CLUSTER_DATA.groups [cell_pos];
+		draw_single_cluster (cluster_number);
+		
+	}
+}
+
 
 function update_image () {
 	clear_image_events ()
@@ -84,6 +113,7 @@ function update_image () {
 	img.addEventListener ("load", draw_image_to_canvas);
 	img.src = "images/" + url;
 	CURRENT_IMG = img;
+	CLUSTER_DATA = null;
 }
 
 function clear_image_events () {
@@ -105,6 +135,8 @@ function draw_image_to_canvas (evt) {
 	draw_grid (context, img, grid_size)
 }
 
+
+
 function scale_canvas_to_fit_image (canvas, img) {
 	var context = canvas.getContext ("2d");
 	context.setTransform (1, 0, 0, 1, 0, 0); // Reset transformations
@@ -112,10 +144,14 @@ function scale_canvas_to_fit_image (canvas, img) {
 	var ratio_y = canvas.height / img.height;
 	var ratio = Math.min (ratio_x, ratio_y);
 	context.scale (ratio, ratio);
+	canvas.dataset.scaled_x = ratio;
+	canvas.dataset.scaled_y = ratio;
 
 	var translate_x = (-img.width + (canvas.width /ratio)) /2;
 	var translate_y = (-img.height + (canvas.height /ratio)) /2;
 	context.translate (translate_x, translate_y);
+	canvas.dataset.translated_x = translate_x;
+	canvas.dataset.translated_y = translate_y;
 }
 
 function draw_grid (context, img, grid_size) {
@@ -167,6 +203,7 @@ function process () {
 	button.disabled = true;
 
 	var cell_size = document.querySelector ("input#cell_size").value;
+	CELL_SIZE = cell_size;
 	var filename = document.querySelector ("select[name=imagefile]").value;
 	var metrics_string = get_metrics_string ();
 	var xhr = new XMLHttpRequest ();
@@ -180,7 +217,9 @@ function on_process_success (evt) {
 	button.disabled = false;
 	var response = JSON.parse (evt.target.responseText);
 	var context = document.querySelector ("canvas.demo_canvas").getContext("2d");
+	CLUSTER_DATA = response;
 	draw_clusters (response, context);
+
 }
 
 function get_metrics_string () {
@@ -195,12 +234,10 @@ function get_metrics_string () {
 }
 
 function draw_clusters (data, context) {
-	DEBUG_DATA = data;
 	var container = document.querySelector (".img_container");
 	var columns = Math.ceil (data.image_width / data.cell_width);
 	var dot_colors = [];
 	for (var i = 0; i< data.groups.length; i++) {
-		var dot = document.createElement ("DIV");
 		if (typeof (dot_colors[data.groups[i]]) == "undefined") {
 			dot_colors[data.groups[i]] = "rgba("+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+", 0.6)";
 		}
@@ -213,6 +250,37 @@ function draw_clusters (data, context) {
 		context.arc (center_x, center_y, radius, 0, 2*Math.PI);
 		context.fill ();
 	}
+}
+
+function draw_single_cluster (cluster_number) {
+	if ((typeof (CURRENT_IMG) == "object") && (typeof (CLUSTER_DATA) == "object")) {
+		var data = CLUSTER_DATA;
+		var img = CURRENT_IMG;
+		var canvas = document.querySelector ("canvas.demo_canvas");
+		var context = canvas.getContext("2d");
+	
+		adjust_canvas_size ();
+		scale_canvas_to_fit_image (canvas, img);
+		context.drawImage (img, 0, 0);
+		cover_waste_cells (context, cluster_number, CLUSTER_DATA);
+	}
+}
+
+function cover_waste_cells (context, cluster_number, data) {
+	var columns = Math.ceil (data.image_width / data.cell_width);
+
+	for (var i = 0; i< data.groups.length; i++) {
+		if (data.groups[i] != cluster_number) {
+			var pos_x = data.cell_width * (i % columns);
+			var pos_y = Math.ceil (data.cell_height * Math.floor (i/columns));
+		
+			context.beginPath ();
+			context.fillStyle = "rgba(0,0,0,0.9)";
+			context.rect (pos_x, pos_y, data.cell_width, data.cell_height);
+			context.fill ();
+		}
+	}
+	
 }
 
 window.onload = init;
