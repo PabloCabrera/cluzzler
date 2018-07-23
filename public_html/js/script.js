@@ -1,8 +1,16 @@
 function init () {
 	M.AutoInit();
+	load_metric_list ();
 	load_select_image ();
 	adjust_canvas_size ();
 	window.addEventListener ("resize", redraw_image);
+}
+
+function load_metric_list () {
+	var xhr = new XMLHttpRequest();
+	xhr.open ("GET", "metrics");
+	xhr.onload = on_load_metric_list_success;
+	xhr.send();
 }
 
 function load_select_image () {
@@ -32,6 +40,35 @@ function on_load_images_success (evt) {
 	});
 	M.FormSelect.init(select)
 	update_image ()
+}
+
+function on_load_metric_list_success (evt) {
+	var metrics = JSON.parse (evt.target.responseText);
+	var metric_names = Object.keys (metrics)
+	metric_names.forEach (function (metric_name) {
+		var metric_description = metrics[metric_name];
+		var control = create_metric_control (metric_name, metric_description)
+		append_control_to_ui (control);
+	});
+}
+
+function create_metric_control (name, description) {
+	var template = document.querySelector (".control_template");
+	var control = template.cloneNode (true);
+	control.classList.remove ("hide");
+	control.classList.remove ("control_template");
+	var input = control.querySelector ("input.metric_range");
+	input.name = name;
+	var name_text = control.querySelector ("label .name");
+	var description_text = control.querySelector ("label .description");
+	name_text.textContent = "[" + name + "]";
+	description_text.textContent = description;
+	return control;
+}
+
+function append_control_to_ui (control) {
+	var container = document.querySelector (".controls_container");
+	container.appendChild (control);
 }
 
 function adjust_canvas_size () {
@@ -131,8 +168,9 @@ function process () {
 
 	var cell_size = document.querySelector ("input#cell_size").value;
 	var filename = document.querySelector ("select[name=imagefile]").value;
+	var metrics_string = get_metrics_string ();
 	var xhr = new XMLHttpRequest ();
-	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename));
+	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename)+metrics_string);
 	xhr.onload = on_process_success;
 	xhr.send ();
 }
@@ -143,6 +181,17 @@ function on_process_success (evt) {
 	var response = JSON.parse (evt.target.responseText);
 	var context = document.querySelector ("canvas.demo_canvas").getContext("2d");
 	draw_clusters (response, context);
+}
+
+function get_metrics_string () {
+	var str = "";
+	var ranges = document.querySelectorAll ("input.metric_range");
+	ranges.forEach (function (range) {
+		if (range.value > 0) {
+			str += "&" + range.name + "=" + range.value;
+		}
+	});
+	return str;
 }
 
 function draw_clusters (data, context) {

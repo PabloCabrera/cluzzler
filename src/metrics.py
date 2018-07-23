@@ -1,7 +1,11 @@
+# coding=utf-8
+
 import operator
 from colorsys import rgb_to_hls
 
 def mean_r (cell):
+	"""Intensidad media de rojo"""
+
 	total = 0
 	data = cell.image.getdata()
 	num_elems = len (data)
@@ -11,6 +15,8 @@ def mean_r (cell):
 	return total
 
 def mean_g (cell):
+	"""Intensidad media de verde"""
+
 	total = 0
 	data = cell.image.getdata()
 	num_elems = len (data)
@@ -20,6 +26,8 @@ def mean_g (cell):
 	return total
 
 def mean_b (cell):
+	"""Intensidad media de azul"""
+
 	total = 0
 	data = cell.image.getdata()
 	num_elems = len (data)
@@ -29,6 +37,8 @@ def mean_b (cell):
 	return total
 
 def min_r (cell):
+	#"""Intensidad mínima de rojo"""
+
 	minimum = 255 
 	data = cell.image.getdata()
 	for pixel in data:
@@ -37,6 +47,8 @@ def min_r (cell):
 	return float (minimum) / 255
 
 def min_g (cell):
+	#"""Intensidad mínima de verde"""
+
 	minimum = 255 
 	data = cell.image.getdata()
 	for pixel in data:
@@ -45,6 +57,8 @@ def min_g (cell):
 	return float (minimum) / 255
 
 def min_b (cell):
+	#"""Intensidad mínima de azul"""
+
 	minimum = 255 
 	data = cell.image.getdata()
 	for pixel in data:
@@ -53,6 +67,7 @@ def min_b (cell):
 	return float (minimum) / 255
 
 def max_r (cell):
+	#"""Intensidad máxima de rojo"""
 	maximum = 0
 	data = cell.image.getdata()
 	for pixel in data:
@@ -61,6 +76,7 @@ def max_r (cell):
 	return float (maximum) / 255
 
 def max_g (cell):
+	#"""Intensidad máxima de verde"""
 	maximum = 0
 	data = cell.image.getdata()
 	for pixel in data:
@@ -69,6 +85,8 @@ def max_g (cell):
 	return float (maximum) / 255
 
 def max_b (cell):
+	#"""Intensidad máxima de azul"""
+
 	maximum = 0
 	data = cell.image.getdata()
 	for pixel in data:
@@ -77,15 +95,22 @@ def max_b (cell):
 	return float (maximum) / 255
 
 def med_r (cell):
+	#"""Intensidad mediana de rojo"""
+
 	return float (max_r (cell) - min_r (cell)) / 2
 
 def med_g (cell):
+	#"""Intensidad mediana de verde"""
 	return float (max_g (cell) - min_g (cell)) / 2
 
 def med_b (cell):
+	#"""Intensidad mediana de azul"""
+
 	return float (max_b (cell) - min_b (cell)) / 2
 
 def seq_diff (cell):
+	"""Diferencia absoluta entre píxeles consecutivos"""
+
 	diff = 0
 	previous = (0, 0, 0)
 	data = cell.image.getdata()
@@ -97,12 +122,18 @@ def seq_diff (cell):
 	return float (diff) / (3 * 10 * num_pixels) # 10 deberia ser 255, pero esta escalado para dar mas amplitud
 
 def pos_x (cell):
+	"""Posición horizontal"""
+
 	return float (cell.x + cell.w/2) / cell.image_full.size[0]
 
 def pos_y (cell):
+	"""Posición vertical"""
+
 	return float (cell.y + cell.h/2) / cell.image_full.size[1]
 
 def min_hue (cell):
+	"""Hue minimo"""
+
 	minimum = 255
 	data = cell.image.getdata()
 	for pixel in data:
@@ -113,6 +144,8 @@ def min_hue (cell):
 	return float (minimum) / 255
 
 def max_hue (cell):
+	"""Hue maximo"""
+
 	maximum = 0
 	data = cell.image.getdata()
 	for pixel in data:
@@ -123,6 +156,8 @@ def max_hue (cell):
 	return float (maximum) / 255
 
 def mean_rgb (cell):
+	#"""Media RGB (multimetric)"""
+
 	# Multi Metric, returns dict
 	total = [0, 0, 0]
 	data = cell.image.getdata()
@@ -142,6 +177,8 @@ def mean_rgb (cell):
 	return results
 
 def ascending_left (cell):
+	"""Aumento de luminosidad hacia izquierda"""
+
 	total = 0
 	pixels = cell.image.getdata()
 	num_pixels = len(pixels)
@@ -155,6 +192,8 @@ def ascending_left (cell):
 	return total / num_pixels
 
 def ascending_right (cell):
+	"""Aumento de luminosidad hacia derecha"""
+
 	total = 0
 	pixels = cell.image.getdata()
 	num_pixels = len(pixels)
@@ -168,6 +207,8 @@ def ascending_right (cell):
 	return total / num_pixels
 
 def ascending_down (cell):
+	"""Aumento de luminosidad hacia abajo"""
+
 	total = 0
 	pixels = cell.image.getdata()
 	num_pixels = len(pixels)
@@ -181,6 +222,8 @@ def ascending_down (cell):
 	return total / num_pixels
 
 def ascending_up (cell):
+	"""Aumento de luminosidad hacia arriba"""
+
 	total = 0
 	pixels = cell.image.getdata()
 	num_pixels = len(pixels)

@@ -28,7 +28,6 @@
 
 	<div class="col s12 m4"> <!-- controls frame -->
 		<div class="card-panel grey lighten-4">
-			<header>Controles</header>
 
 			<div class="input-field">
 				<select name="algorithm">
@@ -51,17 +50,17 @@
 			</div>
 			-->
 
-			<div class="switch">
-				<label>Mostrar estadísticas</label><br>
-				<label>
-					No
-					<input type="checkbox">
-					<span class="lever"></span>
-					Sí
-				</label>
+			<div class="row controls_container">
+
+				<header>Métricas sobre celdas:</header>
+
+				<div class="control_template hide range-field">
+					<label><strong class="description"></strong> <em class="name"></em></label>
+					<input type="range" class="metric_range" min="0" max="1" step="0.01" value="0.5" style="margin-top: 4px" />
+				</div>
+
 			</div>
 
-			<br>
 			<div class="row">
 			<button class="btn_process btn btn-large waves-effect waves-light green col s12" onclick="process()">
 				Procesar

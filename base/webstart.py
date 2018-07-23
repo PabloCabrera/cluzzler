@@ -21,5 +21,4 @@ def example_controller (environ, start_response):
 
 def application (environ, start_response):
 	redirector = WebRedirector.get_instance ()
-	print ("redirector: %s" % redirector);
 	return redirector.redirect (environ, start_response)
