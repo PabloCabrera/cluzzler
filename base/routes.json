@@ -1,6 +1,5 @@
 {
 	"info": "infocontroller.info",
-	"cluzzimages": "images.list",
 	"process": "cluzzler.process",
-	"metrics": "metric.list"
+	"stuff": "stuff.all"
 }

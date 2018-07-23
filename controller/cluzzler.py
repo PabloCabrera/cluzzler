@@ -20,6 +20,7 @@ def process (env, response):
 
 	request = cgi.parse_qs (env["QUERY_STRING"])
 	metrics_cluster = get_requested_metrics (request)
+	store_preset (request)
 
 	cell_size = int (request ["cell_size"][0])
 	filename = request ["filename"][0]
@@ -35,7 +36,6 @@ def process (env, response):
 		for metric_name in metrics_cluster:
 			metric_weight = metrics_cluster[metric_name]
 			analyzer.setMetric (metric_name, getattr (metrics, metric_name), metric_weight)
-			print ("%s: w=%f" %(metric_name, metric_weight))
 
 		calculated = analyzer.analyze (cell)
 		col = 0
@@ -45,14 +45,12 @@ def process (env, response):
 			col += 1
 		cell_row += 1
 
-	print ("Clustering %i cells  (%s)" % (len (cells), filename))
 	#centroids, groups = kmeans2 (cluster_data, 8)
 	db = DBSCAN(eps=0.1, min_samples=3).fit(cluster_data)
 	groups = []
 	for label in db.labels_:
 		groups.append (label+1)
 	num_clusters = max (groups)
-	print ("Found %i clusters" % num_clusters)
 	info = get_clustering_info (groups, cells, filename, image)
 
 	response ("200 OK", [("Content-Type", "text/json")]);
@@ -75,7 +73,6 @@ def load_image (filename):
 	prefix = dirname(dirname(os.path.abspath(__file__))) + "/images"
 
 	image = Image.open ("%s/%s" % (prefix, filename))
-	print ("%s [%i x %i]" % (filename, image.size[0], image.size[1]))
 	return image
 
 def get_clustering_info (groups, cells, input_filename, image):
@@ -108,4 +105,14 @@ def get_cells (image, cell_size):
 		offset_y += cell_size
 	return cells
 
+def store_preset (request):
+	preset_dir = dirname(dirname(os.path.abspath(__file__))) + "/preset"
+	basename = os.path.basename (request["filename"][0])
+	filename = "%s/%s.json" % (preset_dir, basename)
+	store_vars = {}
+	file = open (filename, "w")
+	for key in request:
+		store_vars[key] = request[key][0];
+	file.write (json.dumps (store_vars))
+	file.close ()
 

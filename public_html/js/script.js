@@ -1,28 +1,29 @@
 function init () {
 	M.AutoInit();
-	load_metric_list ();
-	load_select_image ();
+	load_stuff ();
+	//load_metric_list ();
+	//load_select_image ();
 	adjust_canvas_size ();
 	set_canvas_mouse_listener ();
 	window.addEventListener ("resize", redraw_image);
 }
 
-function load_metric_list () {
+function load_stuff () {
 	var xhr = new XMLHttpRequest();
-	xhr.open ("GET", "metrics");
-	xhr.onload = on_load_metric_list_success;
+	xhr.open ("GET", "stuff");
+	xhr.onload = on_load_stuff_success;
 	xhr.send();
 }
 
-function load_select_image () {
-	var xhr = new XMLHttpRequest();
-	xhr.open ("GET", "cluzzimages");
-	xhr.onload = on_load_images_success;
-	xhr.send();
+function on_load_stuff_success (evt) {
+	var stuff = JSON.parse (evt.target.responseText);
+	PRESETS = stuff ["presets"];
+	create_image_options (stuff ["images"]);
+	create_metric_controls (stuff ["metrics"]);
+	update_image ()
 }
 
-function on_load_images_success (evt) {
-	var groups = JSON.parse (evt.target.responseText);
+function create_image_options (groups) {
 	var group_names = Object.keys (groups)
 	var select = document.querySelector ("select[name=imagefile]");
 	select.textContent = ""
@@ -40,11 +41,25 @@ function on_load_images_success (evt) {
 		}
 	});
 	M.FormSelect.init(select)
-	update_image ()
 }
 
-function on_load_metric_list_success (evt) {
-	var metrics = JSON.parse (evt.target.responseText);
+function load_preset () {
+	var select = document.querySelector ("select[name=imagefile]");
+	var basename = select.value.replace (/.*\//, "");
+	if (typeof (PRESETS[basename]) == "object") {
+		var ranges = document.querySelectorAll ("input.metric_range");
+		ranges.forEach (function (range) {
+			console.log (range.name + ": "+PRESETS[basename][range.name]);
+			if (typeof (PRESETS[basename][range.name]) != "undefined") {
+				range.value = Number (PRESETS[basename][range.name]);
+			} else {
+				range.value = 0
+			}
+		});
+	}
+}
+
+function create_metric_controls (metrics) {
 	var metric_names = Object.keys (metrics)
 	metric_names.forEach (function (metric_name) {
 		var metric_description = metrics[metric_name];
@@ -92,6 +107,7 @@ function set_canvas_mouse_listener () {
 function canvas_mouse (x, y) {
 	if (
 		(typeof (CLUSTER_DATA) == "object")
+		&& (CLUSTER_DATA != null)
 		&& (x >= 0) && (x <= CLUSTER_DATA.image_width)
 		&& (y >= 0) && (y <= CLUSTER_DATA.image_height)
 	) {
@@ -114,6 +130,7 @@ function update_image () {
 	img.src = "images/" + url;
 	CURRENT_IMG = img;
 	CLUSTER_DATA = null;
+	load_preset ();
 }
 
 function clear_image_events () {
@@ -226,7 +243,7 @@ function get_metrics_string () {
 	var str = "";
 	var ranges = document.querySelectorAll ("input.metric_range");
 	ranges.forEach (function (range) {
-		if (range.value > 0) {
+		if (range.value > 0 && range.name != "") {
 			str += "&" + range.name + "=" + range.value;
 		}
 	});
