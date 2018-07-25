@@ -11,7 +11,7 @@ def mean_r (cell):
 	num_elems = len (data)
 	for pixel in data:
 		total += pixel [0]
-	total = float (total) / (256 * num_elems)
+	total = float (total) / (255 * num_elems)
 	return total
 
 def mean_g (cell):
@@ -22,7 +22,7 @@ def mean_g (cell):
 	num_elems = len (data)
 	for pixel in data:
 		total += pixel [1]
-	total = float (total) / (256 * num_elems)
+	total = float (total) / (255 * num_elems)
 	return total
 
 def mean_b (cell):
@@ -33,7 +33,7 @@ def mean_b (cell):
 	num_elems = len (data)
 	for pixel in data:
 		total += pixel [2]
-	total = float (total) / (256 * num_elems)
+	total = float (total) / (255 * num_elems)
 	return total
 
 def min_r (cell):
@@ -119,7 +119,7 @@ def seq_diff (cell):
 		for channel in (0, 1, 2):
 			diff += abs (previous[channel] - pixel[channel])
 		previous = pixel
-	return float (diff) / (3 * 10 * num_pixels) # 10 deberia ser 255, pero esta escalado para dar mas amplitud
+	return float (diff) / (3 * 255 * num_pixels)
 
 def pos_x (cell):
 	"""Posición horizontal"""
@@ -132,28 +132,58 @@ def pos_y (cell):
 	return float (cell.y + cell.h/2) / cell.image_full.size[1]
 
 def min_hue (cell):
-	"""Hue minimo"""
+	#"""Hue minimo"""
 
 	minimum = 255
 	data = cell.image.getdata()
 	for pixel in data:
-		if (pixel[0] * pixel[1] * pixel[2] != 0):
-			hls = rgb_to_hls (*pixel)
-			if (hls[1] < minimum):
-				minimum = hls[1]
+		hls = rgb_to_hls (*pixel)
+		if (hls[0] < minimum):
+			minimum = hls[0]
 	return float (minimum) / 255
 
 def max_hue (cell):
-	"""Hue maximo"""
+	#"""Hue maximo"""
 
 	maximum = 0
 	data = cell.image.getdata()
 	for pixel in data:
-		if (pixel[0] * pixel[1] * pixel[2] != 0):
-			hls = rgb_to_hls (*pixel)
-			if (hls[1] >maximum):
-				maximum = hls[1]
+		hls = rgb_to_hls (*pixel)
+		if (hls[0] >maximum):
+			maximum = hls[0]
 	return float (maximum) / 255
+
+def mean_hue (cell):
+	"""Hue promedio"""
+	data = cell.image.getdata()
+	hue_sum = float(0)
+
+	for pixel in data:
+		hls = rgb_to_hls (float(pixel[0])/255, float(pixel[1])/255, float(pixel[2])/255)
+		hue_sum += hls[0]
+	return float (hue_sum) / len(data)
+
+def mean_lum (cell):
+	"""Luminosidad promedio"""
+	data = cell.image.getdata()
+	lum_sum = float(0)
+
+	for pixel in data:
+		hls = rgb_to_hls (float(pixel[0])/255, float(pixel[1])/255, float(pixel[2])/255)
+		lum_sum += hls[1]
+	return float (lum_sum) / len(data)
+
+def mean_saturation (cell):
+	"""Saturación promedio"""
+	data = cell.image.getdata()
+	sat_sum = float(0)
+
+	for pixel in data:
+		hls = rgb_to_hls (float(pixel[0])/255, float(pixel[1])/255, float(pixel[2])/255)
+		sat_adjusted = hls[2] * (1- 2 * abs (0.5 - hls[1]))
+		sat_sum += sat_adjusted
+	return float (sat_sum) / len(data)
+
 
 def mean_rgb (cell):
 	#"""Media RGB (multimetric)"""
@@ -177,7 +207,7 @@ def mean_rgb (cell):
 	return results
 
 def ascending_left (cell):
-	"""Aumento de luminosidad hacia izquierda"""
+	#"""Aumento de luminosidad hacia izquierda"""
 
 	total = 0
 	pixels = cell.image.getdata()
@@ -192,7 +222,7 @@ def ascending_left (cell):
 	return total / num_pixels
 
 def ascending_right (cell):
-	"""Aumento de luminosidad hacia derecha"""
+	#"""Aumento de luminosidad hacia derecha"""
 
 	total = 0
 	pixels = cell.image.getdata()
@@ -207,7 +237,7 @@ def ascending_right (cell):
 	return total / num_pixels
 
 def ascending_down (cell):
-	"""Aumento de luminosidad hacia abajo"""
+	#"""Aumento de luminosidad hacia abajo"""
 
 	total = 0
 	pixels = cell.image.getdata()
@@ -222,7 +252,7 @@ def ascending_down (cell):
 	return total / num_pixels
 
 def ascending_up (cell):
-	"""Aumento de luminosidad hacia arriba"""
+	#"""Aumento de luminosidad hacia arriba"""
 
 	total = 0
 	pixels = cell.image.getdata()

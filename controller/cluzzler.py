@@ -15,6 +15,7 @@ from collections import OrderedDict
 from PIL import Image
 from numpy import empty
 from sklearn.cluster import DBSCAN
+from scipy.cluster.vq import kmeans2
 
 def process (env, response):
 
@@ -24,6 +25,7 @@ def process (env, response):
 
 	cell_size = int (request ["cell_size"][0])
 	filename = request ["filename"][0]
+	algorithm = request ["algorithm"][0]
 
 	analyzer = CellAnalyzer ()
 	image = load_image (filename)
@@ -45,16 +47,33 @@ def process (env, response):
 			col += 1
 		cell_row += 1
 
-	#centroids, groups = kmeans2 (cluster_data, 8)
-	db = DBSCAN(eps=0.1, min_samples=3).fit(cluster_data)
-	groups = []
-	for label in db.labels_:
-		groups.append (label+1)
+	centroids, kmeans_labels = kmeans2 (cluster_data, 8)
+
+	if (algorithm == "kmeans"):
+		groups = cluster_kmeans (cluster_data, 8)
+
+	elif (algorithm == "dbscan"):
+		groups = cluster_dbscan (cluster_data, 0.03, 3)
+
 	num_clusters = max (groups)
 	info = get_clustering_info (groups, cells, filename, image)
 
 	response ("200 OK", [("Content-Type", "text/json")]);
 	return json.dumps (info)
+
+def cluster_dbscan (data, param_eps, param_min_samples):
+	db = DBSCAN(eps=param_eps, min_samples=param_min_samples).fit(data)
+	groups = []
+	for label in db.labels_:
+		groups.append (label+1)
+	return groups
+
+def cluster_kmeans (data, k):
+	centroids, labels = kmeans2 (data, 8)
+	groups = []
+	for label in labels:
+		groups.append (label+1)
+	return groups
 
 def get_requested_metrics (request):
 	requested = OrderedDict () # Debe ser ordenado

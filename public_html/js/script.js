@@ -1,8 +1,6 @@
 function init () {
 	M.AutoInit();
 	load_stuff ();
-	//load_metric_list ();
-	//load_select_image ();
 	adjust_canvas_size ();
 	set_canvas_mouse_listener ();
 	window.addEventListener ("resize", redraw_image);
@@ -49,7 +47,6 @@ function load_preset () {
 	if (typeof (PRESETS[basename]) == "object") {
 		var ranges = document.querySelectorAll ("input.metric_range");
 		ranges.forEach (function (range) {
-			console.log (range.name + ": "+PRESETS[basename][range.name]);
 			if (typeof (PRESETS[basename][range.name]) != "undefined") {
 				range.value = Number (PRESETS[basename][range.name]);
 			} else {
@@ -222,9 +219,10 @@ function process () {
 	var cell_size = document.querySelector ("input#cell_size").value;
 	CELL_SIZE = cell_size;
 	var filename = document.querySelector ("select[name=imagefile]").value;
+	var algorithm_string = get_algorithm_string ();
 	var metrics_string = get_metrics_string ();
 	var xhr = new XMLHttpRequest ();
-	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename)+metrics_string);
+	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename)+algorithm_string+metrics_string);
 	xhr.onload = on_process_success;
 	xhr.send ();
 }
@@ -247,6 +245,13 @@ function get_metrics_string () {
 			str += "&" + range.name + "=" + range.value;
 		}
 	});
+	return str;
+}
+
+function get_algorithm_string () {
+	var str = "&";
+	var algorithm = document.querySelector ("select[name=algorithm]").value;
+	str += "algorithm=" + algorithm;
 	return str;
 }
 
