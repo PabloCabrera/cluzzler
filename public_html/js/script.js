@@ -18,7 +18,8 @@ function on_load_stuff_success (evt) {
 	PRESETS = stuff ["presets"];
 	create_image_options (stuff ["images"]);
 	create_metric_controls (stuff ["metrics"]);
-	update_image ()
+	update_algorithm_controls ();
+	update_image ();
 }
 
 function create_image_options (groups) {
@@ -44,16 +45,20 @@ function create_image_options (groups) {
 function load_preset () {
 	var select = document.querySelector ("select[name=imagefile]");
 	var basename = select.value.replace (/.*\//, "");
-	if (typeof (PRESETS[basename]) == "object") {
-		var ranges = document.querySelectorAll ("input.metric_range");
-		ranges.forEach (function (range) {
-			if (typeof (PRESETS[basename][range.name]) != "undefined") {
-				range.value = Number (PRESETS[basename][range.name]);
-			} else {
-				range.value = 0
-			}
-		});
+
+	if (typeof (PRESETS[basename]) == "undefined") {
+		basename = "default";
 	}
+
+	var items = document.querySelectorAll (".preseteable");
+	console.log ("Loading PRESET "+ basename);
+	items.forEach (function (item) {
+		if (typeof (PRESETS[basename][item.name]) != "undefined") {
+			item.value = PRESETS[basename][item.name];
+			console.log (item.name + " -> "+ item.value);
+		}
+	});
+	console.log ("");
 }
 
 function create_metric_controls (metrics) {
@@ -118,6 +123,17 @@ function canvas_mouse (x, y) {
 	}
 }
 
+function on_algorithm_selected () {
+	update_algorithm_controls ();
+}
+
+function update_algorithm_controls () {
+	var params_divs = document.querySelectorAll (".algorithm_params");
+	params_divs.forEach (function (div) {div.classList.add ("hide");});
+	var selected_algorithm = document.querySelector("select[name=algorithm]").value;
+	var current = document.querySelector ("."+(selected_algorithm)+"_params");
+	current.classList.remove ("hide");
+}
 
 function update_image () {
 	clear_image_events ()
@@ -219,10 +235,9 @@ function process () {
 	var cell_size = document.querySelector ("input#cell_size").value;
 	CELL_SIZE = cell_size;
 	var filename = document.querySelector ("select[name=imagefile]").value;
-	var algorithm_string = get_algorithm_string ();
-	var metrics_string = get_metrics_string ();
+	var preseteables_string = get_preseteables_string ();
 	var xhr = new XMLHttpRequest ();
-	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename)+algorithm_string+metrics_string);
+	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename)+preseteables_string);
 	xhr.onload = on_process_success;
 	xhr.send ();
 }
@@ -237,23 +252,17 @@ function on_process_success (evt) {
 
 }
 
-function get_metrics_string () {
+function get_preseteables_string () {
 	var str = "";
-	var ranges = document.querySelectorAll ("input.metric_range");
-	ranges.forEach (function (range) {
-		if (range.value > 0 && range.name != "") {
-			str += "&" + range.name + "=" + range.value;
+	var items = document.querySelectorAll (".preseteable");
+	items.forEach (function (item) {
+		if (item.name != "" && (item.value != "0") ) {
+			str += "&" + item.name + "=" + item.value;
 		}
 	});
 	return str;
 }
 
-function get_algorithm_string () {
-	var str = "&";
-	var algorithm = document.querySelector ("select[name=algorithm]").value;
-	str += "algorithm=" + algorithm;
-	return str;
-}
 
 function draw_clusters (data, context) {
 	var container = document.querySelector (".img_container");

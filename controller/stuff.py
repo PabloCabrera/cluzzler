@@ -44,8 +44,10 @@ def get_presets (imgdir):
 	for dir in dirs:
 		files = os.listdir ("%s/%s" % (imgdir, dir))
 		for file in files:
-			presets[file] = get_preset (file);
-
+			preset = get_preset (file)
+			if (preset is not None):
+				presets[file] = preset
+	presets ["default"] = get_preset ("default");
 	return presets
 			
 def get_preset (img_name):
@@ -58,7 +60,7 @@ def get_preset (img_name):
 		file.close ()
 		return  (preset)
 	else:
-		return {}
+		return None
 
 
 

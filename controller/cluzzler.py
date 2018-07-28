@@ -26,6 +26,14 @@ def process (env, response):
 	cell_size = int (request ["cell_size"][0])
 	filename = request ["filename"][0]
 	algorithm = request ["algorithm"][0]
+	algorithm_params = {}
+	if (algorithm == "kmeans"):
+		algorithm_params["k"] = int (request ["kmeans_k"][0])
+		algorithm_params["init"] = request ["kmeans_init"][0]
+	elif (algorithm == "dbscan"):
+		algorithm_params["eps"] = float (request ["dbscan_eps"][0])
+		algorithm_params["min_samples"] = int (request ["dbscan_min_samples"][0])
+		
 
 	analyzer = CellAnalyzer ()
 	image = load_image (filename)
@@ -47,13 +55,10 @@ def process (env, response):
 			col += 1
 		cell_row += 1
 
-	centroids, kmeans_labels = kmeans2 (cluster_data, 8)
-
 	if (algorithm == "kmeans"):
-		groups = cluster_kmeans (cluster_data, 8)
-
+		groups = cluster_kmeans (cluster_data, algorithm_params["k"], algorithm_params["init"])
 	elif (algorithm == "dbscan"):
-		groups = cluster_dbscan (cluster_data, 0.03, 3)
+		groups = cluster_dbscan (cluster_data, algorithm_params["eps"], algorithm_params["min_samples"])
 
 	num_clusters = max (groups)
 	info = get_clustering_info (groups, cells, filename, image)
@@ -62,14 +67,14 @@ def process (env, response):
 	return json.dumps (info)
 
 def cluster_dbscan (data, param_eps, param_min_samples):
-	db = DBSCAN(eps=param_eps, min_samples=param_min_samples).fit(data)
+	db = DBSCAN (eps=param_eps, min_samples=param_min_samples).fit(data)
 	groups = []
 	for label in db.labels_:
 		groups.append (label+1)
 	return groups
 
-def cluster_kmeans (data, k):
-	centroids, labels = kmeans2 (data, 8)
+def cluster_kmeans (data, k, init):
+	centroids, labels = kmeans2 (data, k=k, minit=init)
 	groups = []
 	for label in labels:
 		groups.append (label+1)

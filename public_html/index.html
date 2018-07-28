@@ -30,16 +30,42 @@
 		<div class="card-panel grey lighten-4">
 
 			<div class="input-field">
-				<select name="algorithm">
+				<select name="algorithm" class="preseteable" onchange="on_algorithm_selected()">
 					<option value="dbscan">DBScan</option>
 					<option value="kmeans">K-Means</option>
 				</select>
 				<label>Algoritmo de clustering:</label>
 			</div>
 
+			<div class="kmeans_params algorithm_params hide">
+				<div class="input-field col s6">
+					<input id="kmeans_k" name="kmeans_k" class="preseteable" value="5" type="number" min="1" max="256">
+					<label for="kmeans_k">K</label>
+				</div>
+				<div class="input-field col s6">
+					<select name="kmeans_init" class="preseteable">
+						<option value="random">Random</option>
+						<option value="points">Point</option>
+					</select>
+				<label>Inicialización:</label>
+				</div>
+			</div>
+
+			<div class="dbscan_params algorithm_params hide">
+				<div class="input-field col s6">
+					<input id="dbscan_eps" name="dbscan_eps" class="preseteable" value="0.5" type="number" min="0.05" step="0.05">
+					<label for="dbscan_eps">EPS</label>
+				</div>
+
+				<div class="input-field col s6">
+					<input id="dbscan_min_samples" name="dbscan_min_samples" class="preseteable" value="3" type="number" min="1" step="1">
+					<label for="dbscan_min_samples">Min samples</label>
+				</div>
+			</div>
+
 			<div class="row">
 				<div class="input-field col s12">
-					<input id="cell_size" value="32" type="number" min="1" max="256" onchange="redraw_image()">
+					<input id="cell_size" name="cell_size" class="preseteable" value="32" type="number" min="1" max="256" onchange="redraw_image()">
 					<label for="cell_size">Tamaño de la celda</label>
 				</div>
 			</div>
@@ -57,7 +83,7 @@
 
 				<div class="control_template hide range-field">
 					<label><strong class="description"></strong> <em class="name"></em></label>
-					<input type="range" class="metric_range" min="0" max="1" step="0.01" value="0.5" style="margin-top: 4px" />
+					<input type="range" class="metric_range preseteable" min="0" max="1" step="0.01" value="0.15" style="margin-top: 4px" />
 				</div>
 
 			</div>

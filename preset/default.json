@@ -1,0 +1,1 @@
+{"cell_size": "32", "seq_diff": "1", "algorithm": "dbscan", "mean_saturation": "1", "filename": "animales/octopus_vulgaris.jpg", "mean_lum": "1", "dbscan_min_samples": "3", "mean_hue": "1", "kmeans_k": "5", "dbscan_eps": "0.15", "kmeans_init": "random"}
