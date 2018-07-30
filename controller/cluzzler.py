@@ -70,7 +70,7 @@ def cluster_dbscan (data, param_eps, param_min_samples):
 	db = DBSCAN (eps=param_eps, min_samples=param_min_samples).fit(data)
 	groups = []
 	for label in db.labels_:
-		groups.append (label+1)
+		groups.append (label)
 	return groups
 
 def cluster_kmeans (data, k, init):

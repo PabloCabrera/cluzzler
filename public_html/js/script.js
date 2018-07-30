@@ -1,9 +1,20 @@
+DOT_COLORS = [
+	'#ef2929', '#fce94f', '#8ae234', '#729fcf', '#ad7fa8', '#fcaf3e', '#eeeeec', '#888a85', '#e9b96e',
+	'#cc0000', '#edd400', '#73d216', '#3465a4', '#75507b', '#f57900', '#d3d7cf', '#555753', '#c17d11',
+	'#a40000', '#c4a000', '#4e9a06', '#204a87', '#5c3566', '#ce5c00', '#babdb6', '#2e3436', '#8f5902'
+];
+DOT_COLORS[-1]='#444444'; // -1 for dbscan noisy points
+
+
 function init () {
 	M.AutoInit();
+	var modal = document.querySelector(".modal_loading");
+	M.Modal.init(modal);
 	load_stuff ();
 	adjust_canvas_size ();
 	set_canvas_mouse_listener ();
-	window.addEventListener ("resize", redraw_image);
+	update_algorithm_controls ();
+	window.addEventListener ("resize", redraw_image); 
 }
 
 function load_stuff () {
@@ -51,14 +62,29 @@ function load_preset () {
 	}
 
 	var items = document.querySelectorAll (".preseteable");
-	console.log ("Loading PRESET "+ basename);
 	items.forEach (function (item) {
 		if (typeof (PRESETS[basename][item.name]) != "undefined") {
 			item.value = PRESETS[basename][item.name];
-			console.log (item.name + " -> "+ item.value);
+			if (item.tagName == "SELECT") {
+				M.FormSelect.init(item);
+			}
+		} else if (item.classList.contains ("metric_range"))  {
+			item.value = 0;
 		}
 	});
-	console.log ("");
+}
+
+function save_preset () {
+	var select = document.querySelector ("select[name=imagefile]");
+	var basename = select.value.replace (/.*\//, "");
+	var preset = {};
+	var items = document.querySelectorAll (".preseteable");
+	items.forEach (function (item) {
+		if (item.name != "") {
+			preset[item.name] = item.value;
+		}
+	});
+	PRESETS[basename] = preset;
 }
 
 function create_metric_controls (metrics) {
@@ -102,25 +128,41 @@ function set_canvas_mouse_listener () {
 		var rect = canvas.getBoundingClientRect ();
 		var x = (evt.clientX - rect.left) / canvas.dataset.scaled_x - canvas.dataset.translated_x;
 		var y = (evt.clientY - rect.top) / canvas.dataset.scaled_y - canvas.dataset.translated_y;
-		canvas_mouse (x, y);
+		canvas_mouse (x, y, context);
+	});
+	canvas.addEventListener ("mouseout", function (evt) {
+		if ((typeof (CLUSTER_DATA) == "object") && (CLUSTER_DATA != null)) {
+			draw_clusters (CLUSTER_DATA, context);
+		}
 	});
 }
 
-function canvas_mouse (x, y) {
+function canvas_mouse (x, y, context) {
 	if (
 		(typeof (CLUSTER_DATA) == "object")
 		&& (CLUSTER_DATA != null)
-		&& (x >= 0) && (x <= CLUSTER_DATA.image_width)
-		&& (y >= 0) && (y <= CLUSTER_DATA.image_height)
 	) {
-		var row = Math.floor (y / CLUSTER_DATA.cell_height);
-		var col = Math.floor (x / CLUSTER_DATA.cell_width);
-		var cols_per_row = Math.ceil (CLUSTER_DATA.image_width / CLUSTER_DATA.cell_width);
-		var cell_pos = row * cols_per_row + col;
-		var cluster_number = CLUSTER_DATA.groups [cell_pos];
-		draw_single_cluster (cluster_number);
-		
+		if (
+			(x >= 0) && (x <= CLUSTER_DATA.image_width)
+			&& (y >= 0) && (y <= CLUSTER_DATA.image_height)
+		) {
+			var row = Math.floor (y / CLUSTER_DATA.cell_height);
+			var col = Math.floor (x / CLUSTER_DATA.cell_width);
+			var cols_per_row = Math.ceil (CLUSTER_DATA.image_width / CLUSTER_DATA.cell_width);
+			var cell_pos = row * cols_per_row + col;
+			var cluster_number = CLUSTER_DATA.groups [cell_pos];
+			draw_single_cluster (cluster_number);
+		} else {
+			draw_clusters (CLUSTER_DATA, context);
+		}
 	}
+}
+
+function on_imagefile_change () {
+	document.querySelector (".clustering_info").classList.add("hide");
+	document.querySelector (".clustering_options").classList.remove("hide");
+
+	update_image ();
 }
 
 function on_algorithm_selected () {
@@ -130,9 +172,11 @@ function on_algorithm_selected () {
 function update_algorithm_controls () {
 	var params_divs = document.querySelectorAll (".algorithm_params");
 	params_divs.forEach (function (div) {div.classList.add ("hide");});
-	var selected_algorithm = document.querySelector("select[name=algorithm]").value;
-	var current = document.querySelector ("."+(selected_algorithm)+"_params");
-	current.classList.remove ("hide");
+	window.setTimeout(function() {
+		var selected_algorithm = document.querySelector("select[name=algorithm]").value;
+		var current = document.querySelector ("."+(selected_algorithm)+"_params");
+		current.classList.remove ("hide");
+	}, 100);
 }
 
 function update_image () {
@@ -240,6 +284,8 @@ function process () {
 	xhr.open ("GET", "process?cell_size="+Number(cell_size)+"&filename="+encodeURI(filename)+preseteables_string);
 	xhr.onload = on_process_success;
 	xhr.send ();
+	save_preset ();
+	show_loading_screen ();
 }
 
 function on_process_success (evt) {
@@ -249,8 +295,32 @@ function on_process_success (evt) {
 	var context = document.querySelector ("canvas.demo_canvas").getContext("2d");
 	CLUSTER_DATA = response;
 	draw_clusters (response, context);
-
+	show_clustring_info (response);
+	document.getElementById ("image_frame").scrollIntoView();
+	
+	hide_loading_screen ();
 }
+
+
+function on_clusterize_again_click () {
+	CLUSTER_DATA = null;
+	document.querySelector (".clustering_info").classList.add("hide");
+	document.querySelector (".clustering_options").classList.remove("hide");
+	update_algorithm_controls ();
+	load_preset ();
+	update_image ();
+}
+
+function show_loading_screen () {
+	var elem = document.querySelector(".modal_loading");
+	M.Modal.getInstance(elem).open();
+}
+
+function hide_loading_screen () {
+	var elem = document.querySelector(".modal_loading");
+	M.Modal.getInstance(elem).close();
+}
+
 
 function get_preseteables_string () {
 	var str = "";
@@ -263,21 +333,28 @@ function get_preseteables_string () {
 	return str;
 }
 
+function show_clustring_info (data) {
+	var num_clusters = 0;
+	data.groups.forEach (function(elem) {if (elem > num_clusters) {num_clusters = elem}});
+
+	document.querySelector (".num_clusters_found").textContent = num_clusters;
+	document.querySelector (".clustering_info").classList.remove("hide");
+	document.querySelector (".clustering_options").classList.add("hide");
+}
 
 function draw_clusters (data, context) {
 	var container = document.querySelector (".img_container");
 	var columns = Math.ceil (data.image_width / data.cell_width);
-	var dot_colors = [];
 	for (var i = 0; i< data.groups.length; i++) {
-		if (typeof (dot_colors[data.groups[i]]) == "undefined") {
-			dot_colors[data.groups[i]] = "rgba("+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+", 0.6)";
+		if (typeof (DOT_COLORS[data.groups[i]]) == "undefined") {
+			DOT_COLORS[data.groups[i]] = "rgba("+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+","+Math.round (Math.random()*255)+", 0.6)";
 		}
 		var center_x = data.cell_width * ((i % columns) + 0.5);
 		var center_y = Math.ceil (data.cell_height * Math.floor (i/columns)) + data.cell_height/2
 		var radius = (Math.min (data.cell_width, data.cell_height)/2)-2;
 
 		context.beginPath ();
-		context.fillStyle = dot_colors[data.groups[i]];
+		context.fillStyle = DOT_COLORS[data.groups[i]];
 		context.arc (center_x, center_y, radius, 0, 2*Math.PI);
 		context.fill ();
 	}
@@ -302,12 +379,12 @@ function cover_waste_cells (context, cluster_number, data) {
 
 	for (var i = 0; i< data.groups.length; i++) {
 		if (data.groups[i] != cluster_number) {
-			var pos_x = data.cell_width * (i % columns);
-			var pos_y = Math.ceil (data.cell_height * Math.floor (i/columns));
+			var pos_x = data.cell_width * (i % columns)-0.5;
+			var pos_y = Math.ceil (data.cell_height * Math.floor (i/columns))-0.5;
 		
 			context.beginPath ();
-			context.fillStyle = "rgba(0,0,0,0.9)";
-			context.rect (pos_x, pos_y, data.cell_width, data.cell_height);
+			context.fillStyle = "rgba(0,0,0,0.95)";
+			context.rect (pos_x, pos_y, data.cell_width+1, data.cell_height+1);
 			context.fill ();
 		}
 	}

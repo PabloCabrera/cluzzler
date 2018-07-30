@@ -15,9 +15,9 @@
 
 <div class="row">
 
-	<div class="col s12 m8"> <!-- image frame -->
+	<div id="image_frame" class="col s12 m8"> <!-- image frame -->
 		<div class="main_frame card-panel grey lighten-4 center">
-			<select name="imagefile" onchange="update_image()">
+			<select name="imagefile" onchange="on_imagefile_change()">
 				<option>Cargando imagenes...</option>
 			</select>
 			<div class="canvas_container">
@@ -26,7 +26,7 @@
 		</div>
 	</div> <!-- image frame -->
 
-	<div class="col s12 m4"> <!-- controls frame -->
+	<div class="clustering_options col s12 m4"> <!-- controls frame -->
 		<div class="card-panel grey lighten-4">
 
 			<div class="input-field">
@@ -53,7 +53,7 @@
 
 			<div class="dbscan_params algorithm_params hide">
 				<div class="input-field col s6">
-					<input id="dbscan_eps" name="dbscan_eps" class="preseteable" value="0.5" type="number" min="0.05" step="0.05">
+					<input id="dbscan_eps" name="dbscan_eps" class="preseteable" value="0.05" type="number" min="0.01" step="0.01">
 					<label for="dbscan_eps">EPS</label>
 				</div>
 
@@ -97,7 +97,30 @@
 		</div>
 	</div> <!-- controls frame -->
 
+	<div class="clustering_info col s12 m4 hide"> <!-- clustering_info -->
+		<div class="card-panel grey lighten-4">
+			<div class="row">
+				<label>Clusters encontrados:</label> <span class="num_clusters_found">0</span>
+				<br>
+				<p>Posicione el puntero sobre un cluster para verlo.</p>
+				<br>
+				<button class="btn_process_again btn btn-large waves-effect waves-light green col s12" onclick="on_clusterize_again_click()">
+					Volver a clusterizar
+				</button>
+			</div>
+		</div>
+	</div> <!-- clustering_info frame -->
+
 </div> <!-- .row -->
+
+<div class="modal modal_loading center-align">
+	<div class="modal-content">
+		<h4>Clusterizando</h4>
+		<div class="">
+			<img src="img/loading.gif">
+		</div>
+	</div>
+</div>
 
 </body>
 </html>
