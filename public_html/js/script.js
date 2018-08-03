@@ -176,7 +176,7 @@ function update_algorithm_controls () {
 		var selected_algorithm = document.querySelector("select[name=algorithm]").value;
 		var current = document.querySelector ("."+(selected_algorithm)+"_params");
 		current.classList.remove ("hide");
-	}, 100);
+	}, 300);
 }
 
 function update_image () {
@@ -343,6 +343,15 @@ function show_clustring_info (data) {
 }
 
 function draw_clusters (data, context) {
+	if ((typeof (CURRENT_IMG) == "object") && (typeof (CLUSTER_DATA) == "object")) {
+		var canvas = document.querySelector ("canvas.demo_canvas");
+		var context = canvas.getContext("2d");
+	
+		adjust_canvas_size ();
+		scale_canvas_to_fit_image (canvas, CURRENT_IMG);
+		context.drawImage (CURRENT_IMG, 0, 0);
+	}
+
 	var container = document.querySelector (".img_container");
 	var columns = Math.ceil (data.image_width / data.cell_width);
 	for (var i = 0; i< data.groups.length; i++) {
@@ -371,6 +380,7 @@ function draw_single_cluster (cluster_number) {
 		scale_canvas_to_fit_image (canvas, img);
 		context.drawImage (img, 0, 0);
 		cover_waste_cells (context, cluster_number, CLUSTER_DATA);
+		cover_waste_corners (context, cluster_number, CLUSTER_DATA);
 	}
 }
 
@@ -379,16 +389,106 @@ function cover_waste_cells (context, cluster_number, data) {
 
 	for (var i = 0; i< data.groups.length; i++) {
 		if (data.groups[i] != cluster_number) {
-			var pos_x = data.cell_width * (i % columns)-0.5;
-			var pos_y = Math.ceil (data.cell_height * Math.floor (i/columns))-0.5;
-		
-			context.beginPath ();
+			var free_corner = get_uncoverable_corners (i, data, cluster_number);
+			var cw = data.cell_width;
+			var ch = data.cell_height;
+			var pos_x = cw * (i % columns);
+			var pos_y = Math.ceil (ch * Math.floor (i/columns));
+			var steps = [
+				((free_corner["topRight"])? [cw/3, ch/3]: [cw/2, 0]),
+				[cw/2, ch/2],
+				((free_corner["bottomRight"])? [cw/3, ch*5/6]: [cw/2, ch]),
+				[0, ch],
+				((free_corner["bottomLeft"])? [-cw/3, ch*5/6]: [-cw/2, ch]),
+				[-cw/2, ch/2],
+				((free_corner["topLeft"])? [-cw/3, ch/3]: [-cw/2, 0]),
+			];
+
 			context.fillStyle = "rgba(0,0,0,0.95)";
-			context.rect (pos_x, pos_y, data.cell_width+1, data.cell_height+1);
-			context.fill ();
+			draw_polygon (context, [pos_x+cw/2, pos_y], steps);
 		}
 	}
-	
+}
+
+function cover_waste_corners (context, cluster_number, data) {
+	var columns = Math.ceil (data.image_width / data.cell_width);
+
+	for (var i = 0; i< data.groups.length; i++) {
+		if (data.groups[i] == cluster_number) {
+			var col = (i % columns);
+			var row = Math.floor (i / columns);
+			var neighborhood = get_neighborhood (i, cluster_number, data);
+			var coverables = get_coverable_corners (neighborhood);
+			var pos_x = data.cell_width * (col);
+			var pos_y = Math.ceil (data.cell_height * row);
+			context.fillStyle = "rgba(0,0,0,0.95)";
+			var cw = data.cell_width;
+			var ch = data.cell_height;
+			if (coverables["topRight"]) {
+				draw_polygon (context, [pos_x+cw, pos_y], [[-cw/3, 0], [0, ch/3]]);
+			}
+			if (coverables["bottomRight"]) {
+				draw_polygon (context, [pos_x+cw, pos_y+ch], [[-cw/3, 0], [0, -ch/3]]);
+			}
+			if (coverables["bottomLeft"]) {
+				draw_polygon (context, [pos_x, pos_y+ch], [[cw/3, 0], [0, -ch/3]]);
+			}
+			if (coverables["topLeft"]) {
+				draw_polygon (context, [pos_x, pos_y], [[cw/3, 0], [0, ch/3]]);
+			}
+		}
+	}
+}
+
+function draw_polygon (context, start, points) {
+	context.beginPath ();
+	context.moveTo(start[0], start[1]);
+	for (var i=0; i<points.length; i++) {
+		context.lineTo(start[0]+points[i][0], start[1]+points[i][1])
+	}
+	context.closePath();
+	context.fill();
+}
+
+function get_neighborhood (i, cluster_number, data) {
+	var columns = Math.ceil (data.image_width / data.cell_width);
+	var rows = Math.ceil (data.image_height / data.cell_height);
+	var col = (i % columns);
+	var row = Math.floor (i / columns);
+	return {
+		"top": (row>0)? (data.groups[i-columns] == cluster_number): false,
+		"topRight": (row>0 && col<(columns-1))? (data.groups[i-columns+1] == cluster_number): false,
+		"right": (col<(columns-1))? (data.groups[i+1] == cluster_number): false,
+		"bottomRight": (row<(rows-1) && col<(columns-1))? (data.groups[i+columns+1] == cluster_number): false,
+		"bottom": (row<(rows-1))? (data.groups[i+columns] == cluster_number): false,
+		"bottomLeft": (row<(rows-1) && col>0)? (data.groups[i+columns-1] == cluster_number): false,
+		"left": (col>0)? (data.groups[i-1] == cluster_number): false,
+		"topLeft": (row>0 && col>0)? (data.groups[i-columns-1] == cluster_number): false
+	};
+}
+
+function get_coverable_corners (neighborhood) {
+	var n = neighborhood;
+	return {
+		"topRight": !(n["top"] || n["topRight"] || n["right"]),
+		"bottomRight": !(n["bottom"] || n["bottomRight"] || n["right"]),
+		"bottomLeft": !(n["bottom"] || n["bottomLeft"] || n["left"]),
+		"topLeft": !(n["top"] || n["topLeft"] || n["left"])
+	};
+}
+
+function get_uncoverable_corners (i, data, sel) {
+	var cols = Math.ceil (data.image_width / data.cell_width);
+	var rows = Math.ceil (data.image_height / data.cell_height);
+	var col = i % cols
+	var row = Math.floor (i / cols)
+	var dg = data.groups;
+	return {
+		"topRight": (row>0 && col<(cols-1))? (dg[i-cols] == sel && dg[i-cols+1] == sel && dg[i+1] == sel): false,
+		"bottomRight": (row<(rows-1) && col<(cols-1))? (dg[i+cols] == sel && dg[i+cols+1] == sel && dg[i+1] == sel): false,
+		"bottomLeft": (row<(rows-1) && col>0)? (dg[i+cols] == sel && dg[i+cols-1] == sel && dg[i-1] == sel): false,
+		"topLeft": (row>0 && col>0)? (dg[i-cols] == sel && dg[i-cols-1] == sel && dg[i-1] == sel): false
+	};
 }
 
 window.onload = init;
