@@ -15,6 +15,7 @@ from collections import OrderedDict
 from PIL import Image
 from numpy import empty
 from sklearn.cluster import DBSCAN
+from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.vq import kmeans2
 
 def process (env, response):
@@ -33,6 +34,9 @@ def process (env, response):
 	elif (algorithm == "dbscan"):
 		algorithm_params["eps"] = float (request ["dbscan_eps"][0])
 		algorithm_params["min_samples"] = int (request ["dbscan_min_samples"][0])
+	elif (algorithm == "agglomerative"):
+		algorithm_params["n_clusters"] = int (request ["agglomerative_n_clusters"][0])
+		algorithm_params["linkage"] = request ["agglomerative_linkage"][0]
 		
 
 	analyzer = CellAnalyzer ()
@@ -59,6 +63,8 @@ def process (env, response):
 		groups = cluster_kmeans (cluster_data, algorithm_params["k"], algorithm_params["init"])
 	elif (algorithm == "dbscan"):
 		groups = cluster_dbscan (cluster_data, algorithm_params["eps"], algorithm_params["min_samples"])
+	elif (algorithm == "agglomerative"):
+		groups = cluster_agglomerative (cluster_data, algorithm_params["n_clusters"], algorithm_params["linkage"])
 
 	num_clusters = max (groups)
 	info = get_clustering_info (groups, cells, filename, image)
@@ -79,6 +85,14 @@ def cluster_kmeans (data, k, init):
 	for label in labels:
 		groups.append (label+1)
 	return groups
+
+def cluster_agglomerative (data, param_n_clusters, param_linkage):
+	agg = AgglomerativeClustering (n_clusters=param_n_clusters, linkage=param_linkage).fit(data)
+	groups = []
+	for label in agg.labels_:
+		groups.append (label)
+	return groups
+
 
 def get_requested_metrics (request):
 	requested = OrderedDict () # Debe ser ordenado

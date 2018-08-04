@@ -1,9 +1,9 @@
 DOT_COLORS = [
-	'#ef2929', '#fce94f', '#8ae234', '#729fcf', '#ad7fa8', '#fcaf3e', '#eeeeec', '#888a85', '#e9b96e',
-	'#cc0000', '#edd400', '#73d216', '#3465a4', '#75507b', '#f57900', '#d3d7cf', '#555753', '#c17d11',
-	'#a40000', '#c4a000', '#4e9a06', '#204a87', '#5c3566', '#ce5c00', '#babdb6', '#2e3436', '#8f5902'
+	'#ef2929aa', '#fce94faa', '#8ae234aa', '#729fcfaa', '#ad7fa8aa', '#fcaf3eaa', '#eeeeecaa', '#888a85aa', '#e9b96eaa',
+	'#cc0000aa', '#edd400aa', '#73d216aa', '#3465a4aa', '#75507baa', '#f57900aa', '#d3d7cfaa', '#555753aa', '#c17d11aa',
+	'#a40000aa', '#c4a000aa', '#4e9a06aa', '#204a87aa', '#5c3566aa', '#ce5c00aa', '#babdb6aa', '#2e3436aa', '#8f5902ja'
 ];
-DOT_COLORS[-1]='#444444'; // -1 for dbscan noisy points
+DOT_COLORS[-1]='#444444aa'; // -1 for dbscan noisy points
 
 
 function init () {
@@ -13,6 +13,7 @@ function init () {
 	load_stuff ();
 	adjust_canvas_size ();
 	set_canvas_mouse_listener ();
+	set_canvas_double_click_listner ();
 	update_algorithm_controls ();
 	window.addEventListener ("resize", redraw_image); 
 }
@@ -137,6 +138,20 @@ function set_canvas_mouse_listener () {
 	});
 }
 
+function set_canvas_double_click_listner () {
+	var canvas = document.querySelector ("canvas.demo_canvas");
+	canvas.addEventListener ("dblclick", function (evt) {
+		var uri =  canvas.toDataURL ("image/png").replace(/^data:image\/[^;]/, 'data:application/octet-stream');
+		var link = document.createElement ("A");
+		link.href = uri;
+		link.download="cluzzler_"+Math.floor(Math.random()*10000)+".png";
+		link.style.display="none";
+		document.body.appendChild (link);
+		link.click();
+		document.body.removeChild (link);
+	});
+}
+
 function canvas_mouse (x, y, context) {
 	if (
 		(typeof (CLUSTER_DATA) == "object")
@@ -161,8 +176,8 @@ function canvas_mouse (x, y, context) {
 function on_imagefile_change () {
 	document.querySelector (".clustering_info").classList.add("hide");
 	document.querySelector (".clustering_options").classList.remove("hide");
-
 	update_image ();
+	update_algorithm_controls();
 }
 
 function on_algorithm_selected () {
@@ -176,7 +191,7 @@ function update_algorithm_controls () {
 		var selected_algorithm = document.querySelector("select[name=algorithm]").value;
 		var current = document.querySelector ("."+(selected_algorithm)+"_params");
 		current.classList.remove ("hide");
-	}, 300);
+	}, 200);
 }
 
 function update_image () {
@@ -378,7 +393,11 @@ function draw_single_cluster (cluster_number) {
 	
 		adjust_canvas_size ();
 		scale_canvas_to_fit_image (canvas, img);
+		if (cluster_number == "-1") {
+			context.filter = "grayscale(100%)";
+		}
 		context.drawImage (img, 0, 0);
+		context.filter = "none";
 		cover_waste_cells (context, cluster_number, CLUSTER_DATA);
 		cover_waste_corners (context, cluster_number, CLUSTER_DATA);
 	}
@@ -395,17 +414,19 @@ function cover_waste_cells (context, cluster_number, data) {
 			var pos_x = cw * (i % columns);
 			var pos_y = Math.ceil (ch * Math.floor (i/columns));
 			var steps = [
-				((free_corner["topRight"])? [cw/3, ch/3]: [cw/2, 0]),
-				[cw/2, ch/2],
-				((free_corner["bottomRight"])? [cw/3, ch*5/6]: [cw/2, ch]),
-				[0, ch],
-				((free_corner["bottomLeft"])? [-cw/3, ch*5/6]: [-cw/2, ch]),
-				[-cw/2, ch/2],
-				((free_corner["topLeft"])? [-cw/3, ch/3]: [-cw/2, 0]),
+				((free_corner["topRight"])? [cw/3, ch/3]: [cw/2+1, 0]),
+				[cw/2+1, ch/2],
+				((free_corner["bottomRight"])? [cw/3, ch*5/6]: [cw/2+1, ch+1]),
+				[0, ch+1],
+				((free_corner["bottomLeft"])? [-cw/3, ch*5/6]: [-cw/2-1, ch+1]),
+				[-cw/2-1, ch/2],
+				((free_corner["topLeft"])? [-cw/3, ch/3]: [-cw/2-1, 0]),
 			];
 
-			context.fillStyle = "rgba(0,0,0,0.95)";
+			var prev_operation = context.globalCompositeOperation;
+			context.globalCompositeOperation = 'destination-out';
 			draw_polygon (context, [pos_x+cw/2, pos_y], steps);
+			context.globalCompositeOperation = prev_operation;
 		}
 	}
 }
@@ -421,21 +442,23 @@ function cover_waste_corners (context, cluster_number, data) {
 			var coverables = get_coverable_corners (neighborhood);
 			var pos_x = data.cell_width * (col);
 			var pos_y = Math.ceil (data.cell_height * row);
-			context.fillStyle = "rgba(0,0,0,0.95)";
+			var prev_operation = context.globalCompositeOperation;
+			context.globalCompositeOperation = 'destination-out';
 			var cw = data.cell_width;
 			var ch = data.cell_height;
 			if (coverables["topRight"]) {
-				draw_polygon (context, [pos_x+cw, pos_y], [[-cw/3, 0], [0, ch/3]]);
+				draw_polygon (context, [pos_x+cw+1, pos_y-1], [[-cw/3-2, 1], [0, ch/3]]);
 			}
 			if (coverables["bottomRight"]) {
-				draw_polygon (context, [pos_x+cw, pos_y+ch], [[-cw/3, 0], [0, -ch/3]]);
+				draw_polygon (context, [pos_x+cw+1, pos_y+ch+1], [[-cw/3-2, -1], [0, -ch/3]]);
 			}
 			if (coverables["bottomLeft"]) {
-				draw_polygon (context, [pos_x, pos_y+ch], [[cw/3, 0], [0, -ch/3]]);
+				draw_polygon (context, [pos_x-1, pos_y+ch+1], [[cw/3+2, -1], [0, -ch/3]]);
 			}
 			if (coverables["topLeft"]) {
-				draw_polygon (context, [pos_x, pos_y], [[cw/3, 0], [0, ch/3]]);
+				draw_polygon (context, [pos_x-1, pos_y+1], [[cw/3+2, -1], [0, ch/3]]);
 			}
+			context.globalCompositeOperation = prev_operation;
 		}
 	}
 }

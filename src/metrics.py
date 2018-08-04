@@ -109,17 +109,24 @@ def med_b (cell):
 	return float (max_b (cell) - min_b (cell)) / 2
 
 def seq_diff (cell):
-	"""Diferencia absoluta entre píxeles consecutivos"""
+	"""Diferencia absoluta entre píxeles adyacentes"""
 
 	diff = 0
-	previous = (0, 0, 0)
 	data = cell.image.getdata()
+	previous = (0, 0, 0)
+	cols = cell.image.size[0]
+	rows = cell.image.size[1]
 	num_pixels = len (data)
-	for pixel in data:
-		for channel in (0, 1, 2):
-			diff += abs (previous[channel] - pixel[channel])
+	for i in xrange (0, num_pixels):
+		pixel = data[i]
+		if (i % cols != 0):
+			for channel in (0, 1, 2):
+				diff += abs (previous[channel] - pixel[channel]) # pixel a la izquierda
+				if (i > cols):
+					diff += abs (pixel[channel] - data[i-cols][channel]) # pixel arriba
 		previous = pixel
-	return float (diff) / (3 * 255 * num_pixels)
+	retval =  min (float (diff) / (128 * (num_pixels - cols - rows)), 1)
+	return retval
 
 def pos_x (cell):
 	"""Posición horizontal"""

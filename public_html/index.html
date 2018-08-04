@@ -33,6 +33,7 @@
 				<select name="algorithm" class="preseteable" onchange="on_algorithm_selected()">
 					<option value="dbscan">DBScan</option>
 					<option value="kmeans">K-Means</option>
+					<option value="agglomerative">Jerárquico</option>
 				</select>
 				<label>Algoritmo de clustering:</label>
 			</div>
@@ -63,6 +64,20 @@
 				</div>
 			</div>
 
+			<div class="agglomerative_params algorithm_params hide">
+				<div class="input-field col s6">
+					<input id="agglomerative_n_clusters" name="agglomerative_n_clusters" class="preseteable" value="5" type="number" min="1" max="256">
+					<label for="agglomerative_n_clusters">Numero de Clusters</label>
+				</div>
+				<div class="input-field col s6">
+					<select name="agglomerative_linkage" class="preseteable">
+						<option value="complete">Completo</option>
+						<option value="average">Promedio</option>
+						<option value="ward">Ward</option>
+					</select>
+				</div>
+				<label>Inicialización:</label>
+			</div>
 			<div class="row">
 				<div class="input-field col s12">
 					<input id="cell_size" name="cell_size" class="preseteable" value="32" type="number" min="1" max="256" onchange="redraw_image()">
@@ -103,6 +118,7 @@
 				<label>Clusters encontrados:</label> <span class="num_clusters_found">0</span>
 				<br>
 				<p>Posicione el puntero sobre un cluster para verlo.</p>
+				<p>Haga doble click sobre un cluster para exportar la imagen como archivo PNG.</p>
 				<br>
 				<button class="btn_process_again btn btn-large waves-effect waves-light green col s12" onclick="on_clusterize_again_click()">
 					Volver a clusterizar
