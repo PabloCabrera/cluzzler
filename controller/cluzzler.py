@@ -45,12 +45,11 @@ def process (env, response):
 	cluster_data = empty (shape=(len(cells), len(metrics_cluster)))
 	cell_row = 0
 
+	for metric_name in metrics_cluster:
+		metric_weight = metrics_cluster[metric_name]
+		analyzer.setMetric (metric_name, getattr (metrics, metric_name), metric_weight)
+
 	for cell in cells:
-
-		for metric_name in metrics_cluster:
-			metric_weight = metrics_cluster[metric_name]
-			analyzer.setMetric (metric_name, getattr (metrics, metric_name), metric_weight)
-
 		calculated = analyzer.analyze (cell)
 		col = 0
 
